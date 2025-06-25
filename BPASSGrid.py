@@ -16,7 +16,7 @@ class Grid(PI.PIModel):
     This class inherits from PI.PIModel and sets up the BPASS model
     """
 
-    def __init__(self, name='bpass', pars={['CO', 'LOGZ', 'LOGU', 'XI', 'NH']}, lines=['OIII4959', 'OIII5007', 'HB', 'HA', 'OII3727'], fix=None, path=None, recalculate=False):
+    def __init__(self, name='bpass', pars=['CO', 'LOGZ', 'LOGU', 'XI', 'NH'], lines=['OIII4959', 'OIII5007', 'HB', 'HA', 'OII3727'], fix=None, path=None, recalculate=False):
         
         """
         Initialize the BPASS model object
@@ -37,6 +37,8 @@ class Grid(PI.PIModel):
         
         self.pars = pars
         self.fix = fix
+        
+        self.lines = lines
         
         self.read_grid()
     
