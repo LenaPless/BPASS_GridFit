@@ -1,6 +1,8 @@
 import os
 import warnings as w
 
+import difflib
+
 from pifit import MultiNestFit as mf
 
 class Fit():
@@ -46,7 +48,25 @@ class Fit():
         
         self.lines = [x for x, y in zip(lines, self.target.fit_lines) if y == 'True']
         
+        self.translate_line_labels()
+        
         self.run_fit()
+    
+    def translate_line_labels(self):
+        """
+        Translate the line labels to the format used by the model.
+        This is necessary because the model uses different labels for some lines.
+        """
+        
+        for i, line in enumerate(self.lines):
+            if line not in self.model.lines:
+                try: 
+                    for k in self.model.lines:
+                        if difflib.SequenceMatcher(None, k, line).ratio() > 0.8:
+                            line = k
+                            w.warn(f"Found similiar line label {k}. Using {k} instead of {line}. If you did not mean to do this, please check your input.")
+                except ValueError:
+                    raise ValueError(f"Line {line} not found in the Model Grid.")
     
     def run_fit(self):
         
