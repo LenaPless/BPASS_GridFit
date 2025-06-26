@@ -2,6 +2,7 @@ import os
 import warnings as w
 
 import difflib
+import csv
 
 import numpy as np
 
@@ -98,3 +99,26 @@ class Fit():
             return
         else:
             self.results.show_triangle()
+    
+    def save_results(self):
+        
+        """
+        Save the results of the fit to a file.
+        The results will be saved in the path specified during initialization.
+        """
+        
+        if self.results is None:
+            w.warn("No results to save. Please run the fit first.")
+            return
+        
+        self.summary['target_id'] = self.id
+        self.summary['version'] = self.v
+        self.summary['lines'] = ', '.join(self.lines)
+        self.summary['snr'] = self.target.snr
+        self.summary['flux'] = ', '.join([str(x) for x in self.target.flux])
+        self.summary['error'] = ', '.join([str(x) for x in self.target.error])
+        
+        with open(self.path+f'{self.id:.0f}/v{self.v}_{self.id:.0f}_summary.csv', 'w', newline='') as csvfile:
+            writer = csv.DictWriter(csvfile, fieldnames=self.summary.keys())
+            writer.writeheader()
+            writer.writerow(self.summary)
