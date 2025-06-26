@@ -30,7 +30,29 @@ class Target():
         self.fit_lines = [False]*len(self.lines) if lines is not None else None
         
         self.read_flux()
-        self.lines_to_fit()
+
+    def lines_to_fit(self):
+        
+        """
+        Return the lines to fit for the target based on the signal-to-noise ratio.
+        """
+
+        for i, l in enumerate(self.lines):
+            if self.flux[i]/self.error[i] > self.snr:
+                self.fit_lines[i] = True
+    
+    def filter_flux(self):
+        
+        """
+        Filter the fluxes and errors for the target based on the lines to fit.
+        This will return only the fluxes and errors for the lines that are marked as True in fit_lines.
+        """
+        
+        if self.fit_lines is None:
+            w.warn("No lines to fit. Please check the input DataFrame and lines.")
+        else:
+            self.flux = [self.flux[i] for i, fit in enumerate(self.fit_lines) if fit]
+            self.error = [self.error[i] for i, fit in enumerate(self.fit_lines) if fit]
 
 
     def read_flux(self):
@@ -39,14 +61,13 @@ class Target():
         err = []
         
         for l in self.lines:
-            
             """
             Read the fluxes and errors for the target from the DataFrame.
             l - emission line to read
             """
-            
+
             if l not in self.df.columns:
-                try: 
+                try:
                     for k in self.df.keys():
                         if difflib.SequenceMatcher(None, k, l).ratio() > 0.8:
                             l = k
@@ -75,15 +96,9 @@ class Target():
                 err.append(self.df[f'{l}_err_new'].loc[self.df['ID']==self.id].values[0])
 
         self.flux = f
-        self.error = err        
-        return self.flux, self.error
-    
-    def lines_to_fit(self):
-        
-        """
-        Return the lines to fit for the target based on the signal-to-noise ratio.
-        """
+        self.error = err
 
-        for i, l in enumerate(self.lines):
-            if self.flux[i]/self.error[i] > self.snr:
-                self.fit_lines[i] = True
+        self.lines_to_fit()
+        self.filter_flux()
+        
+        return self.flux, self.error

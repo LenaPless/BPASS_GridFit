@@ -3,6 +3,8 @@ import warnings as w
 
 import difflib
 
+import numpy as np
+
 from pifit import MultiNestFit as mf
 
 class Fit():
@@ -36,21 +38,18 @@ class Fit():
             except:
                 w.warn(f"Path {self.path} does not exist. Directory will be created.")
         else:
+            self.path = './results/'
             try:
                 os.path.exists('./results/')
             except:
                 w.warn("Default path './results/' does not exist. Directory will be created.")
         
-        self.target.read_flux()
-        self.target.lines_to_fit()
-        
         #only fit lines that are marked as True in the target's fit_lines and thus have a SNR above the threshold (DEFAULT: 3)
         
-        self.lines = [x for x, y in zip(lines, self.target.fit_lines) if y == 'True']
+        self.lines = [x for x, y in zip(lines, self.target.fit_lines) if y == True]
         
-        self.translate_line_labels()
-        
-        self.run_fit()
+        self.results = None
+        self.summary = None
     
     def translate_line_labels(self):
         """
@@ -62,8 +61,8 @@ class Fit():
             if line not in self.model.lines:
                 try: 
                     for k in self.model.lines:
-                        if difflib.SequenceMatcher(None, k, line).ratio() > 0.8:
-                            line = k
+                        if difflib.SequenceMatcher(None, k.lower(), line.lower()).ratio() >= 0.4:
+                            self.lines[i] = k
                             w.warn(f"Found similiar line label {k}. Using {k} instead of {line}. If you did not mean to do this, please check your input.")
                 except ValueError:
                     raise ValueError(f"Line {line} not found in the Model Grid.")
@@ -73,21 +72,29 @@ class Fit():
         """
         Run the fit.
         """
+
+        if self.lines != []:
+            self.fit = mf.MultiNestFit(self.model)
         
-        self.fit = mf.MultiNestFit(self.model)
-        
-        if not os.path.exists(self.path):
-            os.makedirs(self.path)
-        
-        self.results = self.fit.fit(lines=self.lines, fluxes=self.target.flux, dfluxes=self.target.error, fit_dust=False, basename=self.path+f'{self.id:.0f}/v{self.v}_{self.id:.0f}')
-        self.summary = self.results.summarised_results()
-        
-        return self.summary
+            if not os.path.exists(self.path):
+                os.makedirs(self.path)
+
+            self.results = self.fit.fit(lines=self.lines, fluxes=np.array(self.target.flux), dfluxes=np.array(self.target.error), fit_dust=False, basename=self.path+f'{self.id:.0f}/v{self.v}_{self.id:.0f}')
+            self.summary = self.results.summarised_results()
+            
+            return self.summary
+
+        else:
+            w.warn("No lines to fit. Consider lowering the SNR threshold in the target object or providing a list of lines to fit.")
+            return None
         
     def show_corner(self):
         
         """
         Show the corner plot of the fit.
         """
-        
-        self.results.show_triangle()
+        if self.results is None:
+            w.warn("No results to show.")
+            return
+        else:
+            self.results.show_triangle()
