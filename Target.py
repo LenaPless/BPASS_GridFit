@@ -77,18 +77,22 @@ class Target():
 
             if '372' in l and ('O2' in l or 'o2' in l or 'OII' in l or 'oII' in l):
                 
-                w.warn(f"Line {l} is a blend of OII lines commonly unresolved. The fluxes will be summed for the OII doublet at 3726 and 3729 A. If you did not mean to do this, please check your input.")
+                if sum(1 for line in self.lines if '372' in line and ('O2' in line or 'o2' in line or 'OII' in line or 'oII' in line)) == 1:
+                    f.append(self.df[l].loc[self.df['ID']==self.id].values[0])
+                    err.append(self.df[f'{l}_err_new'].loc[self.df['ID']==self.id].values[0])
+                else:
+                    w.warn(f"Line {l} is a blend of OII lines commonly unresolved. The fluxes will be summed for the OII doublet at 3726 and 3729 A. If you did not mean to do this, please check your input.")
 
-                f.append(self.df['o2_3726'].loc[self.df['ID']==self.id].values[0]+self.df['o2_3729'].loc[self.df['ID']==self.id].values[0])
-                e = np.sqrt(self.df['o2_3726_err_new'].loc[self.df['ID']==self.id].values[0]**2+self.df['o2_3729_err_new'].loc[self.df['ID']==self.id].values[0]**2)
-                err.append(e)
+                    f.append(self.df['o2_3726'].loc[self.df['ID']==self.id].values[0]+self.df['o2_3729'].loc[self.df['ID']==self.id].values[0])
+                    e = np.sqrt(self.df['o2_3726_err_new'].loc[self.df['ID']==self.id].values[0]**2+self.df['o2_3729_err_new'].loc[self.df['ID']==self.id].values[0]**2)
+                    err.append(e)
 
             elif '671' in l and ('S2' in l or 's2' in l or 'SII' in l or 'sII' in l):
                 
                 w.warn(f"Line {l} is a blend of SII lines commonly unresolved. The fluxes will be summed for the SII doublet at 6718 and 6733 A. If you did not mean to do this, please check your input.")
 
-                f.append(self.df['s2_6718'].loc[self.df['ID']==self.id].values[0]+self.df['s2_6733'].loc[self.df['ID']==self.id].values[0])
-                e = np.sqrt(self.df['s2_6718_err_new'].loc[self.df['ID']==self.id].values[0]**2+self.df['s2_6733_err_new'].loc[self.df['ID']==self.id].values[0]**2)
+                f.append(self.df[l].loc[self.df['ID']==self.id].values[0]+self.df[l].loc[self.df['ID']==self.id].values[0])
+                e = np.sqrt(self.df[f'{l}_err_new'].loc[self.df['ID']==self.id].values[0]**2+self.df[f'{l}_err_new'].loc[self.df['ID']==self.id].values[0]**2)
                 err.append(e)
                 
             else:

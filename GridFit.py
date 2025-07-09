@@ -2,7 +2,7 @@ import os
 import warnings as w
 
 import difflib
-import csv
+import json
 
 import numpy as np
 
@@ -51,7 +51,17 @@ class Fit():
         
         self.results = None
         self.summary = None
-    
+        
+         #check that the order of the lines in the target object matches the lines given to fit
+        
+        if self.target.lines is not None:
+            if not all(line in self.target.lines for line in self.lines):
+                raise ValueError("Some lines to fit are not present in the target object. Please check the input lines. The lines to fit are: {}".format(self.lines) + " The lines in the target object are: {}".format(self.target.lines))
+            elif [k==j for k, j in zip(self.lines, self.target.lines)] != [True]*len(self.lines):
+                raise IndexError("The order of the lines to fit does not match the order of the lines in the target object. Please check the input lines.")
+        else:
+            raise ValueError("No lines present in the target object. Please check the input lines.")
+
     def translate_line_labels(self):
         """
         Translate the line labels to the format used by the model.
@@ -75,6 +85,7 @@ class Fit():
         """
 
         if self.lines != []:
+            
             self.fit = mf.MultiNestFit(self.model)
         
             if not os.path.exists(self.path):
@@ -118,7 +129,5 @@ class Fit():
         self.summary['flux'] = ', '.join([str(x) for x in self.target.flux])
         self.summary['error'] = ', '.join([str(x) for x in self.target.error])
         
-        with open(self.path+f'{self.id:.0f}/v{self.v}_{self.id:.0f}_summary.csv', 'w', newline='') as csvfile:
-            writer = csv.DictWriter(csvfile, fieldnames=self.summary.keys())
-            writer.writeheader()
-            writer.writerow(self.summary)
+        with open(self.path+f'{self.id:.0f}/v{self.v}_{self.id:.0f}_summary.json', 'w') as f:
+            json.dump(self.summary, f, indent=4)
